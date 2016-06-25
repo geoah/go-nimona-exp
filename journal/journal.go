@@ -5,6 +5,8 @@ import (
 	"github.com/nimona/go-nimona/stream"
 )
 
+var rootEntryIndex Index
+
 // Journal is a Stream for user journals.
 type Journal struct {
 	userID      store.Key
@@ -13,9 +15,6 @@ type Journal struct {
 
 // NewJournal creates a new Journal.
 func NewJournal(userID store.Key, persistence store.Store) *Journal {
-	rootEntry := NewJournalEntry("0", "0", &JournalPayload{})
-	key := NewJournalClusteringKey(userID, rootEntry.GetIndex())
-	persistence.Put(key, rootEntry)
 	return &Journal{
 		userID:      userID,
 		persistence: persistence,
@@ -23,13 +22,13 @@ func NewJournal(userID store.Key, persistence store.Store) *Journal {
 }
 
 func (j *Journal) getClusteringKeyForIndex(index stream.Index) store.ClusteringKey {
-	return NewJournalClusteringKey(j.userID, index)
+	return NewClusteringKey(j.userID, index)
 }
 
 // GetEntry returns a single Entry by it's Index.
 func (j *Journal) GetEntry(index stream.Index) (stream.Entry, error) {
 	key := j.getClusteringKeyForIndex(index)
-	entry := &JournalEntry{}
+	entry := &Entry{}
 	err := j.persistence.GetOne(key, entry)
 	if err != nil {
 		return nil, err
@@ -39,10 +38,13 @@ func (j *Journal) GetEntry(index stream.Index) (stream.Entry, error) {
 
 // AppendEntry appends an Entry to the Journal.
 func (j *Journal) AppendEntry(entry stream.Entry) error {
-	_, errParent := j.GetEntry(entry.GetParentIndex())
-	if errParent != nil {
-		return stream.ErrMissingParentIndex
+	if entry.GetParentIndex() != rootEntryIndex {
+		_, errParent := j.GetEntry(entry.GetParentIndex())
+		if errParent != nil {
+			return stream.ErrMissingParentIndex
+		}
 	}
+	// TODO(geoah) Check that entry doesn't already exist
 	key := j.getClusteringKeyForIndex(entry.GetIndex())
 	errPutting := j.persistence.Put(key, entry)
 	if errPutting != nil {

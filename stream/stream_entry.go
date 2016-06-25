@@ -1,7 +1,7 @@
 package stream
 
 // Index is log's incremental index.
-type Index string // interface{}
+type Index interface{}
 
 // Payload is the entry's content.
 type Payload interface{}

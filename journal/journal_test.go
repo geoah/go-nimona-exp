@@ -28,9 +28,9 @@ func (s *JournalTestSuite) SetupTest() {
 }
 
 func (s *JournalTestSuite) TestPersistedAppend_Valid_Succeeds() {
-	entry1 := NewJournalEntry("1", "0", &JournalPayload{String: "entry1"})
-	entry2 := NewJournalEntry("2", "1", &JournalPayload{String: "entry2"})
-	entry3 := NewJournalEntry("3", "2", &JournalPayload{String: "entry3"})
+	entry1 := NewEntry(1, &Payload{String: "entry1"})
+	entry2 := NewEntry(2, &Payload{String: "entry2"})
+	entry3 := NewEntry(3, &Payload{String: "entry3"})
 
 	errEntry1 := s.journal.AppendEntry(entry1)
 	assert.Nil(s.T(), errEntry1)
@@ -47,7 +47,7 @@ func (s *JournalTestSuite) TestPersistedAppend_Valid_Succeeds() {
 }
 
 func (s *JournalTestSuite) TestAppend_InvalidParent_Failes() {
-	entry2 := NewJournalEntry("2", "1", &JournalPayload{String: "entry2"})
+	entry2 := NewEntry(2, &Payload{String: "entry2"})
 
 	errEntry2 := s.journal.AppendEntry(entry2)
 	assert.Equal(s.T(), errEntry2, stream.ErrMissingParentIndex)
