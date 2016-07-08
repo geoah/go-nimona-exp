@@ -4,12 +4,12 @@ import "github.com/nimona/go-nimona/stream"
 
 // Entry is an Entry for the UserJournal
 type Entry struct {
-	Index   Index    `json:"index"`
-	Payload *Payload `json:"payload"`
+	Index   Index  `json:"index"`
+	Payload []byte `json:"payload"`
 }
 
 // NewEntry creates a new Entry
-func NewEntry(index Index, payload *Payload) *Entry {
+func NewEntry(index Index, payload []byte) *Entry {
 	return &Entry{
 		Index:   index,
 		Payload: payload,

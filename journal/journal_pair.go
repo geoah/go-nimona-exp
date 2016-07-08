@@ -32,9 +32,7 @@ func NewClusteringKey(userID store.Key, index stream.Index) store.ClusteringKey 
 }
 
 // Payload is our Journal's entry payload
-type Payload struct {
-	String string `json:"string"`
-}
+type Payload []byte
 
 // Index is our Journal's entry index
 type Index uint64

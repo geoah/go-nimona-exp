@@ -2,7 +2,6 @@ package store
 
 import (
 	"encoding/json"
-	"reflect"
 
 	"sync"
 )
@@ -10,7 +9,12 @@ import (
 // InMemoryStore is an implementation of an in-memory Store
 type InMemoryStore struct {
 	sync.Mutex
-	pairs map[Key]Value
+	pairs map[string]Value
+}
+
+func (s *InMemoryStore) key(completeKey ClusteringKey) string {
+	key, _ := json.Marshal(completeKey.GetKeys())
+	return string(key)
 }
 
 // Put sets the key's value, overwriting the previous if it exists.
@@ -27,7 +31,7 @@ func (s *InMemoryStore) Put(completeKey ClusteringKey, value Value) (err error) 
 		return ErrInternalError // TODO(geoah) ErrMarshalling
 	}
 
-	s.pairs[completeKey] = string(valueJSON)
+	s.pairs[s.key(completeKey)] = string(valueJSON)
 	return nil
 }
 
@@ -41,11 +45,9 @@ func (s *InMemoryStore) GetOne(completeKey ClusteringKey, result Value) (err err
 	s.Lock()
 	defer s.Unlock()
 
-	for key, valueJSON := range s.pairs {
-		if s.keyEqual(key, completeKey) == true {
-			errUnmashal := json.Unmarshal([]byte(valueJSON.(string)), result)
-			return errUnmashal
-		}
+	if valueJSON, ok := s.pairs[s.key(completeKey)]; ok {
+		errUnmashal := json.Unmarshal([]byte(valueJSON.(string)), result)
+		return errUnmashal
 	}
 
 	// result = value
@@ -66,13 +68,9 @@ func (s *InMemoryStore) Delete(completeKey ClusteringKey) (err error) {
 	return nil
 }
 
-func (s *InMemoryStore) keyEqual(key1, key2 Key) bool {
-	return reflect.DeepEqual(key1, key2)
-}
-
 // NewInMemoryStore returns a new in-memory Store
 func NewInMemoryStore() Store {
 	return &InMemoryStore{
-		pairs: map[Key]Value{},
+		pairs: map[string]Value{},
 	}
 }
