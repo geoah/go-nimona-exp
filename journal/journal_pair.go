@@ -2,7 +2,6 @@ package journal
 
 import (
 	"github.com/nimona/go-nimona/store"
-	"github.com/nimona/go-nimona/stream"
 )
 
 // ClusteringKey is a composite key of 2 keys.
@@ -18,21 +17,14 @@ func (ck *ClusteringKey) GetKeys() []store.Key {
 
 // IsComplete checks if the ClusteringKey is complete.
 func (ck *ClusteringKey) IsComplete() bool {
-	return len(ck.keys) == 2
+	return len(ck.keys) == 1
 }
 
 // NewClusteringKey creates a new ClusteringKey using the user's ID.
-func NewClusteringKey(userID store.Key, index stream.Index) store.ClusteringKey {
+func NewClusteringKey(index Index) store.ClusteringKey {
 	return &ClusteringKey{
 		keys: []store.Key{
-			userID,
 			index,
 		},
 	}
 }
-
-// Payload is our Journal's entry payload
-type Payload []byte
-
-// Index is our Journal's entry index
-type Index uint64

@@ -1,8 +1,8 @@
 package repository
 
 import (
+	"github.com/nimona/go-nimona/journal"
 	"github.com/nimona/go-nimona/store"
-	"github.com/nimona/go-nimona/stream"
 )
 
 // Resource is the value of any resource.
@@ -12,8 +12,8 @@ type Resource interface{}
 // It is responsible of managing the projections (resources) for the various event types.
 type Repository interface {
 	GetResourceByID(string) (Resource, error)
-	AppendEntry(stream.Entry) (Resource, error)
-	AppendedEntry(stream.Entry)
+	AppendEntry(journal.Entry) (Resource, error)
+	AppendedEntry(journal.Entry)
 }
 
 // ClusteringKey is a composite key of 2 keys.

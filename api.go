@@ -1,6 +1,8 @@
 package main
 
 import (
+	"encoding/json"
+	"log"
 	"time"
 
 	"github.com/kataras/iris"
@@ -60,9 +62,11 @@ func (api *API) PostInstance(c *iris.Context) {
 		},
 	}
 
-	err = api.journal.AppendPayload(instanceCreated)
+	instanceCreatedJSON, _ := json.Marshal(instanceCreated) // TODO(geoah) Handle error
+	err = api.journal.AppendPayload(instanceCreatedJSON)
 	if err != nil {
 		c.JSON(iris.StatusInternalServerError, iris.Map{"error": err})
+		log.Println("Could not append payload. err=", err)
 		return
 	}
 	instance, err := api.instances.GetResourceByID(id)
@@ -95,7 +99,8 @@ func (api *API) PatchInstance(c *iris.Context) {
 		},
 	}
 
-	err = api.journal.AppendPayload(instanceUpdated)
+	instanceUpdatedJSON, _ := json.Marshal(instanceUpdated) // TODO(geoah) Handle error
+	err = api.journal.AppendPayload(instanceUpdatedJSON)
 	if err != nil {
 		c.JSON(iris.StatusInternalServerError, iris.Map{"error": err})
 		return

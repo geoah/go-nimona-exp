@@ -10,9 +10,9 @@ import (
 )
 
 func main() {
-	ownerID := "1"
 	journalStore := store.NewInMemoryStore()
-	journal := j.NewJournal(ownerID, journalStore)
+	journal := j.NewJournal(journalStore)
+
 	instanceRepositoryStore := store.NewInMemoryStore()
 	instanceRepository := repository.NewInstanceRepository(journal, instanceRepositoryStore)
 	journal.Notify(instanceRepository)

@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/nimona/go-nimona/journal"
 	"github.com/nimona/go-nimona/store"
-	"github.com/nimona/go-nimona/stream"
 )
 
 // NewClusteringKey creates a new ClusteringKey using the user's ID.
@@ -75,14 +75,14 @@ func (i *Instance) ToJSON() ([]byte, error) {
 }
 
 type InstanceRepository struct {
-	stream stream.Stream
-	store  store.Store
+	journal *journal.Journal
+	store   store.Store
 }
 
-func NewInstanceRepository(stream stream.Stream, store store.Store) *InstanceRepository {
+func NewInstanceRepository(j *journal.Journal, s store.Store) *InstanceRepository {
 	return &InstanceRepository{
-		stream: stream,
-		store:  store,
+		journal: j,
+		store:   s,
 	}
 }
 
@@ -96,45 +96,42 @@ func (r *InstanceRepository) GetResourceByID(id string) (*Instance, error) {
 	return instance, nil
 }
 
-func (r *InstanceRepository) AppendEntry(entry stream.Entry) (Resource, error) {
+func (r *InstanceRepository) AppendEntry(entry journal.Entry) (Resource, error) {
 	return &Instance{}, nil
 }
 
-func (r *InstanceRepository) AppendedEntry(entry stream.Entry) {
-	if entryPayload, ok := entry.GetPayload().([]byte); ok {
-		fmt.Println("> Processing", string(entryPayload))
-		event := &EventUnknown{}
-		err := json.Unmarshal(entryPayload, event)
-		if err != nil {
-			// TODO(geoah) Log error.
-			return
-		}
+func (r *InstanceRepository) AppendedEntry(entry journal.Entry) {
+	fmt.Println("> Processing", string(entry.GetPayload()))
+	event := &EventUnknown{}
+	err := json.Unmarshal(entry.GetPayload(), event)
+	if err != nil {
+		// TODO(geoah) Log error.
+		return
+	}
 
-		switch event.Topic {
-		case "Created":
-			fmt.Println(">> As created")
-			eventPayload := &InstanceCreatedEvent{}
-			errPayload := json.Unmarshal(event.Payload, eventPayload)
-			if errPayload == nil {
-				r.handleEvent(eventPayload)
-			}
-		case "Updated":
-			fmt.Println(">> As Updated")
-			eventPayload := &InstanceUpdatedEvent{}
-			errPayload := json.Unmarshal(event.Payload, eventPayload)
-			if errPayload == nil {
-				r.handleEvent(eventPayload)
-			}
-		case "Removed":
-			fmt.Println(">> As removed")
-			eventPayload := &InstanceRemovedEvent{}
-			errPayload := json.Unmarshal(event.Payload, eventPayload)
-			if errPayload == nil {
-				r.handleEvent(eventPayload)
-			}
+	switch event.Topic {
+	case "Created":
+		fmt.Println(">> As created")
+		eventPayload := &InstanceCreatedEvent{}
+		errPayload := json.Unmarshal(event.Payload, eventPayload)
+		if errPayload == nil {
+			r.handleEvent(eventPayload)
+		}
+	case "Updated":
+		fmt.Println(">> As Updated")
+		eventPayload := &InstanceUpdatedEvent{}
+		errPayload := json.Unmarshal(event.Payload, eventPayload)
+		if errPayload == nil {
+			r.handleEvent(eventPayload)
+		}
+	case "Removed":
+		fmt.Println(">> As removed")
+		eventPayload := &InstanceRemovedEvent{}
+		errPayload := json.Unmarshal(event.Payload, eventPayload)
+		if errPayload == nil {
+			r.handleEvent(eventPayload)
 		}
 	}
-	// TODO(geoah) Log invalid entry payload.
 }
 
 func (r *InstanceRepository) handleEvent(event interface{}) error {
