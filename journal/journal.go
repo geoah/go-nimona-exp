@@ -2,7 +2,6 @@ package journal
 
 import (
 	"errors"
-	"fmt"
 
 	"github.com/nimona/go-nimona/store"
 )
@@ -60,29 +59,30 @@ func (j *Journal) GetEntry(index Index) (Entry, error) {
 	return entry, nil
 }
 
-// AppendEntry appends an Entry to the Journal.
-func (j *Journal) AppendEntry(entry Entry) error {
+// RestoreEntry appends an Entry to the Journal with an existing index.
+func (j *Journal) RestoreEntry(entry Entry) (Index, error) {
 	if entry.GetParentIndex() != rootEntryIndex {
 		_, errParent := j.GetEntry(entry.GetParentIndex())
 		if errParent != nil {
-			return ErrMissingParentIndex
+			return j.lastIndex, ErrMissingParentIndex
 		}
 	}
 	// TODO(geoah) Check that entry doesn't already exist
 	key := j.getClusteringKeyForIndex(entry.GetIndex())
 	errPutting := j.persistence.Put(key, entry)
 	if errPutting != nil {
-		return errPutting
+		return j.lastIndex, errPutting
 	}
 	j.lastIndex = entry.GetIndex()
 	j.notifyAll(entry)
-	return nil
+	return j.lastIndex, nil
 }
 
-// AppendPayload appends a payload as the Entry to the Journal.
-func (j *Journal) AppendPayload(payload Payload) error {
+// AppendEntry appends a payload as the next Entry to the Journal.
+func (j *Journal) AppendEntry(payload Payload) (Index, error) {
+	// TODO(geoah) Lock
 	entry := NewEntry(j.lastIndex+1, payload)
-	return j.AppendEntry(entry)
+	return j.RestoreEntry(entry)
 }
 
 // Notify adds notifiees for AppendEntry events.
@@ -90,9 +90,10 @@ func (j *Journal) Notify(notifiee Notifiee) {
 	j.notifiees = append(j.notifiees, notifiee)
 }
 
-// Notify notifies anyone who cares about changes in the stream.
+// notifyAll notifies anyone who cares about changes in the stream.
 func (j *Journal) notifyAll(entry Entry) {
-	fmt.Println("> Notifying notifiees about entry", entry)
+	// TODO(geoah) Log
+	// fmt.Println("> Notifying notifiees about entry", entry)
 	for _, notifiee := range j.notifiees {
 		notifiee.AppendedEntry(entry)
 	}
