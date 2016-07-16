@@ -26,32 +26,26 @@ func (s *InMemoryStore) Put(completeKey ClusteringKey, value Value) (err error) 
 	s.Lock()
 	defer s.Unlock()
 
-	valueJSON, errJSON := json.Marshal(value)
-	if errJSON != nil {
-		return ErrInternalError // TODO(geoah) ErrMarshalling
-	}
-
-	s.pairs[s.key(completeKey)] = string(valueJSON)
+	s.pairs[s.key(completeKey)] = value
 	return nil
 }
 
 // GetOne gets the value for a clustering key and updates theresult, else
 // errors with `ErrClusteringKeyNotFound`, or `ErrClusteringKeyNotComplete`.
-func (s *InMemoryStore) GetOne(completeKey ClusteringKey, result Value) (err error) {
+func (s *InMemoryStore) GetOne(completeKey ClusteringKey) (value Value, err error) {
 	if completeKey.IsComplete() == false {
-		return ErrClusteringKeyNotComplete
+		return nil, ErrClusteringKeyNotComplete
 	}
 
 	s.Lock()
 	defer s.Unlock()
 
-	if valueJSON, ok := s.pairs[s.key(completeKey)]; ok {
-		errUnmashal := json.Unmarshal([]byte(valueJSON.(string)), result)
-		return errUnmashal
+	if value, ok := s.pairs[s.key(completeKey)]; ok {
+		return value, nil
 	}
 
 	// result = value
-	return ErrClusteringKeyNotFound
+	return nil, ErrClusteringKeyNotFound
 }
 
 // GetAll updates the results list with the values of the given incomplete

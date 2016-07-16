@@ -75,11 +75,11 @@ func (i *Instance) ToJSON() ([]byte, error) {
 }
 
 type InstanceRepository struct {
-	journal *journal.Journal
+	journal *journal.SerialJournal
 	store   store.Store
 }
 
-func NewInstanceRepository(j *journal.Journal, s store.Store) *InstanceRepository {
+func NewInstanceRepository(j *journal.SerialJournal, s store.Store) *InstanceRepository {
 	return &InstanceRepository{
 		journal: j,
 		store:   s,
@@ -87,11 +87,15 @@ func NewInstanceRepository(j *journal.Journal, s store.Store) *InstanceRepositor
 }
 
 func (r *InstanceRepository) GetResourceByID(id string) (*Instance, error) {
-	instance := &Instance{}
 	key := NewClusteringKey(id)
-	err := r.store.GetOne(key, instance)
+	instanceJSON, err := r.store.GetOne(key)
 	if err != nil {
 		return nil, err
+	}
+	instance := &Instance{}
+	errUnmarshalling := json.Unmarshal(instanceJSON, instance)
+	if errUnmarshalling != nil {
+		return nil, errUnmarshalling
 	}
 	return instance, nil
 }
@@ -149,7 +153,8 @@ func (r *InstanceRepository) handleEvent(event interface{}) error {
 			Payload: t.Payload,
 		}
 		key := NewClusteringKey(t.ID)
-		err := r.store.Put(key, instance) // TODO(geoah) Handle error
+		instanceJSON, _ := json.Marshal(instance)
+		err := r.store.Put(key, instanceJSON) // TODO(geoah) Handle error
 		return err
 	case *InstanceUpdatedEvent:
 		fmt.Println(">> As Updated", t)
@@ -160,7 +165,8 @@ func (r *InstanceRepository) handleEvent(event interface{}) error {
 		instance.Updated = t.Updated
 		instance.Payload = t.Payload
 		key := NewClusteringKey(t.ID)
-		err = r.store.Put(key, instance) // TODO(geoah) Handle error
+		instanceJSON, _ := json.Marshal(instance)
+		err = r.store.Put(key, instanceJSON) // TODO(geoah) Handle error
 		return err
 	case *InstanceRemovedEvent:
 		fmt.Println(">> As removed")
@@ -171,7 +177,8 @@ func (r *InstanceRepository) handleEvent(event interface{}) error {
 		instance.Updated = t.Updated
 		instance.Removed = true
 		key := NewClusteringKey(t.ID)
-		err = r.store.Put(key, instance) // TODO(geoah) Handle error
+		instanceJSON, _ := json.Marshal(instance)
+		err = r.store.Put(key, instanceJSON) // TODO(geoah) Handle error
 		return err
 	default:
 		return errors.New("erm... invalid event")

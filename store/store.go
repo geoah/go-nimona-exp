@@ -18,7 +18,7 @@ type ClusteringKey interface {
 }
 
 // Value of the key-value pairs
-type Value interface{}
+type Value []byte
 
 // ErrClusteringKeyNotFound when a complete clustering key was provided
 // but could not be retrieved.
@@ -37,7 +37,7 @@ type Store interface {
 	Put(completeKey ClusteringKey, value Value) (err error)
 	// GetOne gets the value for a clustering key and updates theresult, else
 	// errors with `ErrClusteringKeyNotFound`, or `ErrClusteringKeyNotComplete`.
-	GetOne(completeKey ClusteringKey, result Value) (err error)
+	GetOne(completeKey ClusteringKey) (value Value, err error)
 	// GetAll updates the results list with the values of the given incomplete
 	// ClusteringKey, or `ErrClusteringKeyComplete`
 	GetAll(key ClusteringKey, results []*Value) (err error)

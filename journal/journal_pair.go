@@ -21,7 +21,7 @@ func (ck *ClusteringKey) IsComplete() bool {
 }
 
 // NewClusteringKey creates a new ClusteringKey using the user's ID.
-func NewClusteringKey(index Index) store.ClusteringKey {
+func NewClusteringKey(index SerialIndex) store.ClusteringKey {
 	return &ClusteringKey{
 		keys: []store.Key{
 			index,

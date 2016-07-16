@@ -1,10 +1,10 @@
 package journal
 
-// Index is log's incremental index.
-type Index uint64
+// SerialIndex is serial journal's incremental index.
+type SerialIndex uint64
 
 // Payload is the entry's content.
-type Payload []byte
+// type Payload []byte
 
 // Entry is each of the records of our journal.
 type Entry interface {
@@ -13,34 +13,34 @@ type Entry interface {
 	// GetParentIndex returns the parent Entry's Index.
 	GetParentIndex() Index
 	// GetPayload returns the Payload for the Entry
-	GetPayload() Payload
+	GetPayload() []byte
 }
 
-// BasicEntry is an Entry for the UserJournal
-type BasicEntry struct {
-	Index   Index  `json:"index"`
-	Payload []byte `json:"payload"`
+// SerialEntry is an Entry in our Journal with a SerialIndex.
+type SerialEntry struct {
+	index   Index
+	payload []byte
 }
 
-// NewEntry creates a new Entry
-func NewEntry(index Index, payload []byte) *BasicEntry {
-	return &BasicEntry{
-		Index:   index,
-		Payload: payload,
+// NewSerialEntry creates a new SerialEntry out of an index and payload.
+func NewSerialEntry(index SerialIndex, payload []byte) *SerialEntry {
+	return &SerialEntry{
+		index:   index,
+		payload: payload,
 	}
 }
 
 // GetIndex returns the Entry's Index.
-func (e *BasicEntry) GetIndex() Index {
-	return e.Index
+func (e *SerialEntry) GetIndex() Index {
+	return e.index
 }
 
 // GetParentIndex returns the parent Entry's Index.
-func (e *BasicEntry) GetParentIndex() Index {
-	return e.Index - 1
+func (e *SerialEntry) GetParentIndex() Index {
+	return e.index.(SerialIndex) - 1
 }
 
 // GetPayload returns the Payload for the Entry.
-func (e *BasicEntry) GetPayload() Payload {
-	return e.Payload
+func (e *SerialEntry) GetPayload() []byte {
+	return e.payload
 }

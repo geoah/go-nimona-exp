@@ -13,11 +13,11 @@ import (
 
 type API struct {
 	ownerID   string
-	journal   *journal.Journal
+	journal   *journal.SerialJournal
 	instances *repository.InstanceRepository
 }
 
-func NewAPI(ownerID string, journal *journal.Journal, instanceRepository *repository.InstanceRepository) *API {
+func NewAPI(ownerID string, journal *journal.SerialJournal, instanceRepository *repository.InstanceRepository) *API {
 	return &API{
 		ownerID:   ownerID,
 		journal:   journal,
