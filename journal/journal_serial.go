@@ -1,6 +1,7 @@
 package journal
 
 import (
+	"fmt"
 	"sync"
 
 	"github.com/nimona/go-nimona/store"
@@ -54,13 +55,13 @@ func NewJournal(persistence store.Store) *SerialJournal {
 	}
 }
 
-func (j *SerialJournal) getClusteringKeyForIndex(index Index) store.ClusteringKey {
-	return NewClusteringKey(index.(SerialIndex))
+func (j *SerialJournal) getKeyForIndex(index Index) store.Key {
+	return []byte(fmt.Sprintf("%d", index))
 }
 
 // GetEntry returns a single Entry by it's Index.
 func (j *SerialJournal) GetEntry(index Index) (Entry, error) {
-	key := j.getClusteringKeyForIndex(index)
+	key := j.getKeyForIndex(index)
 	payload, err := j.persistence.GetOne(key)
 	if err != nil {
 		return nil, err
@@ -78,7 +79,7 @@ func (j *SerialJournal) RestoreEntry(entry Entry) (Index, error) {
 		}
 	}
 	// TODO(geoah) Check that entry doesn't already exist
-	key := j.getClusteringKeyForIndex(entry.GetIndex())
+	key := j.getKeyForIndex(entry.GetIndex())
 	errPutting := j.persistence.Put(key, entry.GetPayload())
 	if errPutting != nil {
 		return j.lastIndex, errPutting

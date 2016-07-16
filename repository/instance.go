@@ -10,15 +10,6 @@ import (
 	"github.com/nimona/go-nimona/store"
 )
 
-// NewClusteringKey creates a new ClusteringKey using the user's ID.
-func NewClusteringKey(resourceID string) store.ClusteringKey {
-	return &ClusteringKey{
-		keys: []store.Key{
-			resourceID,
-		},
-	}
-}
-
 type Event struct {
 	Topic   string      `json:"topic"`
 	Payload interface{} `json:"payload"`
@@ -86,9 +77,12 @@ func NewInstanceRepository(j *journal.SerialJournal, s store.Store) *InstanceRep
 	}
 }
 
+func (r *InstanceRepository) getKeyForID(id string) []byte {
+	return []byte(id)
+}
+
 func (r *InstanceRepository) GetResourceByID(id string) (*Instance, error) {
-	key := NewClusteringKey(id)
-	instanceJSON, err := r.store.GetOne(key)
+	instanceJSON, err := r.store.GetOne(r.getKeyForID(id))
 	if err != nil {
 		return nil, err
 	}
@@ -152,7 +146,7 @@ func (r *InstanceRepository) handleEvent(event interface{}) error {
 			Updated: t.Updated,
 			Payload: t.Payload,
 		}
-		key := NewClusteringKey(t.ID)
+		key := r.getKeyForID(t.ID)
 		instanceJSON, _ := json.Marshal(instance)
 		err := r.store.Put(key, instanceJSON) // TODO(geoah) Handle error
 		return err
@@ -164,7 +158,7 @@ func (r *InstanceRepository) handleEvent(event interface{}) error {
 		}
 		instance.Updated = t.Updated
 		instance.Payload = t.Payload
-		key := NewClusteringKey(t.ID)
+		key := r.getKeyForID(t.ID)
 		instanceJSON, _ := json.Marshal(instance)
 		err = r.store.Put(key, instanceJSON) // TODO(geoah) Handle error
 		return err
@@ -176,12 +170,11 @@ func (r *InstanceRepository) handleEvent(event interface{}) error {
 		}
 		instance.Updated = t.Updated
 		instance.Removed = true
-		key := NewClusteringKey(t.ID)
+		key := r.getKeyForID(t.ID)
 		instanceJSON, _ := json.Marshal(instance)
 		err = r.store.Put(key, instanceJSON) // TODO(geoah) Handle error
 		return err
 	default:
 		return errors.New("erm... invalid event")
 	}
-	return nil
 }

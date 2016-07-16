@@ -1,10 +1,6 @@
 package store
 
-import (
-	"encoding/json"
-
-	"sync"
-)
+import "sync"
 
 // InMemoryStore is an implementation of an in-memory Store
 type InMemoryStore struct {
@@ -12,52 +8,42 @@ type InMemoryStore struct {
 	pairs map[string]Value
 }
 
-func (s *InMemoryStore) key(completeKey ClusteringKey) string {
-	key, _ := json.Marshal(completeKey.GetKeys())
+func (s *InMemoryStore) key(key Key) string {
 	return string(key)
 }
 
 // Put sets the key's value, overwriting the previous if it exists.
-func (s *InMemoryStore) Put(completeKey ClusteringKey, value Value) (err error) {
-	if completeKey.IsComplete() == false {
-		return ErrClusteringKeyNotComplete
-	}
-
+func (s *InMemoryStore) Put(key Key, value Value) (err error) {
 	s.Lock()
 	defer s.Unlock()
 
-	s.pairs[s.key(completeKey)] = value
+	s.pairs[s.key(key)] = value
 	return nil
 }
 
 // GetOne gets the value for a clustering key and updates theresult, else
-// errors with `ErrClusteringKeyNotFound`, or `ErrClusteringKeyNotComplete`.
-func (s *InMemoryStore) GetOne(completeKey ClusteringKey) (value Value, err error) {
-	if completeKey.IsComplete() == false {
-		return nil, ErrClusteringKeyNotComplete
-	}
-
+// errors with `ErrKeyNotFound`.
+func (s *InMemoryStore) GetOne(key Key) (value Value, err error) {
 	s.Lock()
 	defer s.Unlock()
 
-	if value, ok := s.pairs[s.key(completeKey)]; ok {
+	if value, ok := s.pairs[s.key(key)]; ok {
 		return value, nil
 	}
 
 	// result = value
-	return nil, ErrClusteringKeyNotFound
+	return nil, ErrKeyNotFound
 }
 
-// GetAll updates the results list with the values of the given incomplete
-// ClusteringKey, or `ErrClusteringKeyComplete`
-func (s *InMemoryStore) GetAll(key ClusteringKey, results []*Value) (err error) {
+// GetAll finds all pairs that partially match the given key (left to right).
+func (s *InMemoryStore) GetAll(key Key) (results []*Value, err error) {
 	// TODO Implement
-	return nil
+	return results, nil
 }
 
 // Delete removed the key's value if it exists, else errors with
-// `ErrClusteringKeyNotFound`, or `ErrClusteringKeyNotComplete`.
-func (s *InMemoryStore) Delete(completeKey ClusteringKey) (err error) {
+// `ErrKeyNotFound`, or `ErrKeyNotComplete`.
+func (s *InMemoryStore) Delete(key Key) (err error) {
 	// TODO Implement
 	return nil
 }
