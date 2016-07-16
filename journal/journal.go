@@ -2,7 +2,6 @@ package journal
 
 import (
 	"errors"
-	"sync"
 
 	"github.com/nimona/go-nimona/store"
 )
@@ -12,9 +11,6 @@ const rootEntryIndex SerialIndex = 0
 // ErrMissingParentIndex thrown when trying to append an Entry with its
 // Parent missing.
 var ErrMissingParentIndex = errors.New("Entry's parent index is missing.")
-
-// Index is the journal's index.
-type Index interface{}
 
 // Journal is a series of entries.
 type Journal interface {
@@ -27,80 +23,46 @@ type Journal interface {
 	Notify(Notifiee)
 }
 
+// Index is the journal's index.
+type Index interface{}
+
+// Entry is each of the records of our journal.
+type Entry interface {
+	// GetIndex returns the Entry's Index.
+	GetIndex() Index
+	// GetParentIndex returns the parent Entry's Index.
+	GetParentIndex() Index
+	// GetPayload returns the Payload for the Entry
+	GetPayload() []byte
+}
+
 // Notifiee is an interface for an object wishing to receive
 // notifications from a Network.
 type Notifiee interface {
 	AppendedEntry(Entry) // called when an entry has been appended
 }
 
-// SerialJournal is a series of entries.
-type SerialJournal struct {
-	sync.Mutex
-	persistence store.Store
-	notifiees   []Notifiee // TODO(geoah) convert to a map so we can de-register them.
-	lastIndex   SerialIndex
+// ClusteringKey is a composite key of 2 keys.
+// The first key is the user's ID and the second key is the entry's index.
+type ClusteringKey struct {
+	keys []store.Key
 }
 
-// NewJournal creates a new Journal.
-func NewJournal(persistence store.Store) *SerialJournal {
-	return &SerialJournal{
-		persistence: persistence,
-		lastIndex:   0,
-	}
+// GetKeys returns the individual keys.
+func (ck *ClusteringKey) GetKeys() []store.Key {
+	return ck.keys
 }
 
-func (j *SerialJournal) getClusteringKeyForIndex(index Index) store.ClusteringKey {
-	return NewClusteringKey(index.(SerialIndex))
+// IsComplete checks if the ClusteringKey is complete.
+func (ck *ClusteringKey) IsComplete() bool {
+	return len(ck.keys) == 1
 }
 
-// GetEntry returns a single Entry by it's Index.
-func (j *SerialJournal) GetEntry(index Index) (Entry, error) {
-	key := j.getClusteringKeyForIndex(index)
-	payload, err := j.persistence.GetOne(key)
-	if err != nil {
-		return nil, err
-	}
-	entry := NewSerialEntry(index.(SerialIndex), payload)
-	return entry, nil
-}
-
-// RestoreEntry appends an Entry to the Journal with an existing index.
-func (j *SerialJournal) RestoreEntry(entry Entry) (Index, error) {
-	if entry.GetParentIndex() != rootEntryIndex {
-		_, errParent := j.GetEntry(entry.GetParentIndex())
-		if errParent != nil {
-			return j.lastIndex, ErrMissingParentIndex
-		}
-	}
-	// TODO(geoah) Check that entry doesn't already exist
-	key := j.getClusteringKeyForIndex(entry.GetIndex())
-	errPutting := j.persistence.Put(key, entry.GetPayload())
-	if errPutting != nil {
-		return j.lastIndex, errPutting
-	}
-	j.lastIndex = entry.GetIndex().(SerialIndex) // TODO(geoah) Do we need to check for type?
-	j.notifyAll(entry)
-	return j.lastIndex, nil
-}
-
-// AppendEntry appends a payload as the next Entry to the Journal.
-func (j *SerialJournal) AppendEntry(payload []byte) (Index, error) {
-	j.Lock()
-	defer j.Unlock()
-	entry := NewSerialEntry(j.lastIndex+1, payload)
-	return j.RestoreEntry(entry)
-}
-
-// Notify adds notifiees for AppendEntry events.
-func (j *SerialJournal) Notify(notifiee Notifiee) {
-	j.notifiees = append(j.notifiees, notifiee)
-}
-
-// notifyAll notifies anyone who cares about changes in the stream.
-func (j *SerialJournal) notifyAll(entry Entry) {
-	// TODO(geoah) Log
-	// fmt.Println("> Notifying notifiees about entry", entry)
-	for _, notifiee := range j.notifiees {
-		notifiee.AppendedEntry(entry)
+// NewClusteringKey creates a new ClusteringKey using the user's ID.
+func NewClusteringKey(index SerialIndex) store.ClusteringKey {
+	return &ClusteringKey{
+		keys: []store.Key{
+			index,
+		},
 	}
 }
