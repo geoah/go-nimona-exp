@@ -62,7 +62,7 @@ func (j *SerialJournal) getKeyForIndex(index Index) store.Key {
 // GetEntry returns a single Entry by it's Index.
 func (j *SerialJournal) GetEntry(index Index) (Entry, error) {
 	key := j.getKeyForIndex(index)
-	payload, err := j.persistence.GetOne(key)
+	payload, err := j.persistence.Get(key)
 	if err != nil {
 		return nil, err
 	}

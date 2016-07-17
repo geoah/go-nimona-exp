@@ -82,7 +82,7 @@ func (r *InstanceRepository) getKeyForID(id string) []byte {
 }
 
 func (r *InstanceRepository) GetResourceByID(id string) (*Instance, error) {
-	instanceJSON, err := r.store.GetOne(r.getKeyForID(id))
+	instanceJSON, err := r.store.Get(r.getKeyForID(id))
 	if err != nil {
 		return nil, err
 	}

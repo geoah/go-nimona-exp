@@ -16,15 +16,13 @@ var ErrInternalError = errors.New("Internal error.")
 
 // Store is a very generic interface for storing key-value pairs.
 type Store interface {
-	// Put sets the key's value, overwriting the previous if it exists.
+	// Put sets the key's value, overwriting the previous if it exists,
+	// errors with `ErrInternalError`.
 	Put(key Key, value Value) (err error)
-	// GetOne gets the value for a key and updates theresult, else
-	// errors with `ErrKeyNotFound`.
-	GetOne(key Key) (value Value, err error)
-	// GetAll finds all pairs that partially match the given key
-	// (left to right).
-	GetAll(key Key) (results []*Value, err error)
-	// Delete removes the key's value if it exists, else errors with
-	// `ErrKeyNotFound`.
+	// Get gets the value for a given key,else errors with
+	// `ErrKeyNotFound`, or `ErrInternalError`.
+	Get(key Key) (value Value, err error)
+	// Delete removes a value if it exists, else errors with
+	// `ErrKeyNotFound`, or `ErrInternalError`.
 	Delete(key Key) (err error)
 }

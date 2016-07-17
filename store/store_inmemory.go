@@ -21,9 +21,8 @@ func (s *InMemoryStore) Put(key Key, value Value) (err error) {
 	return nil
 }
 
-// GetOne gets the value for a clustering key and updates theresult, else
-// errors with `ErrKeyNotFound`.
-func (s *InMemoryStore) GetOne(key Key) (value Value, err error) {
+// Get gets the value for a key, errors with `ErrKeyNotFound`.
+func (s *InMemoryStore) Get(key Key) (value Value, err error) {
 	s.Lock()
 	defer s.Unlock()
 
@@ -33,12 +32,6 @@ func (s *InMemoryStore) GetOne(key Key) (value Value, err error) {
 
 	// result = value
 	return nil, ErrKeyNotFound
-}
-
-// GetAll finds all pairs that partially match the given key (left to right).
-func (s *InMemoryStore) GetAll(key Key) (results []*Value, err error) {
-	// TODO Implement
-	return results, nil
 }
 
 // Delete removed the key's value if it exists, else errors with
