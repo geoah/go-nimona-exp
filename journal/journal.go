@@ -12,7 +12,7 @@ var ErrMissingParentIndex = errors.New("Entry's parent index is missing.")
 type Journal interface {
 	// GetEntry returns a single Entry by it's Index.
 	GetEntry(Index) (Entry, error)
-	// AppendEntry appends an Entry to the Stream, else returns error
+	// AppendEntry appends an Entry to the Journal, else returns error
 	// `ErrMissingParentIndex` if their parent index does not exist.
 	AppendEntry(Entry) error
 	// Notify registers a notifiee for signals

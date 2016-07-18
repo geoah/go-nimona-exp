@@ -102,7 +102,7 @@ func (j *SerialJournal) Notify(notifiee Notifiee) {
 	j.notifiees = append(j.notifiees, notifiee)
 }
 
-// notifyAll notifies anyone who cares about changes in the stream.
+// notifyAll notifies anyone who cares about changes in the Journal.
 func (j *SerialJournal) notifyAll(entry Entry) {
 	// TODO(geoah) Log
 	// fmt.Println("> Notifying notifiees about entry", entry)
