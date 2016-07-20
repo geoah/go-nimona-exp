@@ -76,7 +76,7 @@ func (j *SerialJournal) Restore(entries ...Entry) (Index, error) {
 
 // Append appends a payload as the next Entry to the Journal.
 func (j *SerialJournal) Append(payloads ...[]byte) (Index, error) {
-	payload := payloads[0]
+	payload := payloads[0] // TODO(geoah) handle all payloads
 	j.Lock()
 	defer j.Unlock()
 	entry := NewSerialEntry(j.lastIndex+1, payload)
