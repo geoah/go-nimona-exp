@@ -2,25 +2,15 @@ package journal
 
 import "errors"
 
-const rootEntryIndex SerialIndex = 0
-
 // ErrMissingParentIndex thrown when trying to append an Entry with its
 // Parent missing.
 var ErrMissingParentIndex = errors.New("Entry's parent index is missing.")
 
-// Journal is a series of entries.
-type Journal interface {
-	// GetEntry returns a single Entry by it's Index.
-	GetEntry(Index) (Entry, error)
-	// AppendEntry appends an Entry to the Journal, else returns error
-	// `ErrMissingParentIndex` if their parent index does not exist.
-	AppendEntry(Entry) error
-	// Notify registers a notifiee for signals
-	Notify(Notifiee)
-}
+// Index is a unique identifier of each entry.
+type Index []byte
 
-// Index is the journal's index.
-type Index interface{}
+// Payload is the value of each entry.
+type Payload []byte
 
 // Entry is each of the records of our journal.
 type Entry interface {
@@ -29,11 +19,34 @@ type Entry interface {
 	// GetParentIndex returns the parent Entry's Index.
 	GetParentIndex() Index
 	// GetPayload returns the Payload for the Entry
-	GetPayload() []byte
+	GetPayload() Payload
 }
 
-// Notifiee is an interface for an object wishing to receive
-// notifications from a Network.
+// Notifiee is an interface for an object wishing to receive notifications
+// of appended Entries in a Journal.
 type Notifiee interface {
-	AppendedEntry(Entry) // called when an entry has been appended
+	// AppendedEntry will be called when an entry has been appended
+	// and persisted in the journal.
+	AppendedEntry(Entry)
+}
+
+// Journal is a series of entries.
+type Journal interface {
+	// Append appends a Payload to the Journal as the next Index,
+	// it returns the new index under which the Entry was added,
+	// or returns `ErrMissingParentIndex` if their parent Index does not exist.
+	// Append will notify all Notifiees about the appended Entry.
+	Append(payload ...Payload) (Index, error)
+	// Restore restores an existing Entry to the Journal,
+	// or returns `ErrMissingParentIndex` if their parent index does not exist.
+	// Restore is used when replicating a Journal and will return the last known
+	// Index when returning `ErrMissingParentIndex` so the sender can replay
+	// all Entries since that Index.
+	// Restore will notify all Notifiees about the restored Entry.
+	Restore(entry ...Entry) (Index, error)
+	// Notify registers a notifiee that is interested in when new Entries have
+	// been appended in the Journal.
+	// Notify can specify the index from which notifications will start in order
+	// to skip Entries that might have already been processed.
+	Notify(Notifiee, Index)
 }

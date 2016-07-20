@@ -63,7 +63,7 @@ func (api *API) PostInstance(c *iris.Context) {
 	}
 
 	instanceCreatedJSON, _ := json.Marshal(instanceCreated) // TODO(geoah) Handle error
-	_, err = api.journal.AppendEntry(instanceCreatedJSON)
+	_, err = api.journal.Append(instanceCreatedJSON)
 	if err != nil {
 		c.JSON(iris.StatusInternalServerError, iris.Map{"error": err})
 		log.Println("Could not append payload. err=", err)
@@ -100,7 +100,7 @@ func (api *API) PatchInstance(c *iris.Context) {
 	}
 
 	instanceUpdatedJSON, _ := json.Marshal(instanceUpdated) // TODO(geoah) Handle error
-	_, err = api.journal.AppendEntry(instanceUpdatedJSON)
+	_, err = api.journal.Append(instanceUpdatedJSON)
 	if err != nil {
 		c.JSON(iris.StatusInternalServerError, iris.Map{"error": err})
 		return
