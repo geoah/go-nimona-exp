@@ -18,8 +18,6 @@ type Payload []byte
 type Entry interface {
 	// GetIndex returns the Entry's Index.
 	GetIndex() Index
-	// GetParentIndex returns the parent Entry's Index.
-	GetParentIndex() Index
 	// GetPayload returns the Payload for the Entry
 	GetPayload() Payload
 }

@@ -59,7 +59,7 @@ func (j *SerialJournal) getKeyForIndex(index Index) store.Key {
 // Restore appends an Entry to the Journal with an existing index.
 func (j *SerialJournal) Restore(entries ...Entry) (Index, error) {
 	entry := entries[0] // TODO(geoah) handle all entries
-	pi := entry.GetParentIndex()
+	pi := entry.GetIndex() - 1
 	if pi != rootEntryIndex && pi != j.lastIndex {
 		return j.lastIndex, ErrMissingParentIndex
 	}
