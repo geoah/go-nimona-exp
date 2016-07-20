@@ -2,59 +2,41 @@ package journal
 
 import (
 	"fmt"
-	"strconv"
 	"sync"
 
 	"github.com/nimona/go-nimona/store"
 )
-
-const rootEntrySerialIndex SerialIndex = 0
 
 // SerialJournal is a Journal with an incremental Index.
 type SerialJournal struct {
 	sync.Mutex
 	persistence store.Store
 	notifiees   []Notifiee // TODO(geoah) convert to a map so we can de-register them.
-	lastIndex   SerialIndex
+	lastIndex   Index
 }
 
-// SerialIndex is serial journal's incremental index.
-type SerialIndex uint64
-
-// SerialEntry is an Entry in our Journal with a SerialIndex.
+// SerialEntry is an Entry in our Journal with a Index.
 type SerialEntry struct {
-	index   SerialIndex
+	index   Index
 	payload []byte
 }
 
 // NewSerialEntry creates a new SerialEntry out of an index and payload.
-func NewSerialEntry(index SerialIndex, payload []byte) *SerialEntry {
+func NewSerialEntry(index Index, payload []byte) *SerialEntry {
 	return &SerialEntry{
 		index:   index,
 		payload: payload,
 	}
 }
 
-func indexFromBytes(b []byte) SerialIndex {
-	i, err := strconv.ParseUint(string(b), 10, 64)
-	if err != nil {
-		return 0 // TODO(geoah) Panic?
-	}
-	return SerialIndex(i)
-}
-
-func indexToBytes(i SerialIndex) []byte {
-	return []byte(strconv.FormatUint(uint64(i), 10))
-}
-
 // GetIndex returns the Entry's Index.
 func (e *SerialEntry) GetIndex() Index {
-	return indexToBytes(e.index)
+	return e.index
 }
 
 // GetParentIndex returns the parent Entry's Index.
 func (e *SerialEntry) GetParentIndex() Index {
-	return indexToBytes(e.index - 1)
+	return e.index - 1
 }
 
 // GetPayload returns the Payload for the Entry.
@@ -66,7 +48,7 @@ func (e *SerialEntry) GetPayload() Payload {
 func NewJournal(persistence store.Store) *SerialJournal {
 	return &SerialJournal{
 		persistence: persistence,
-		lastIndex:   rootEntrySerialIndex,
+		lastIndex:   rootEntryIndex,
 	}
 }
 
@@ -77,19 +59,19 @@ func (j *SerialJournal) getKeyForIndex(index Index) store.Key {
 // Restore appends an Entry to the Journal with an existing index.
 func (j *SerialJournal) Restore(entries ...Entry) (Index, error) {
 	entry := entries[0] // TODO(geoah) handle all entries
-	pi := indexFromBytes(entry.GetParentIndex())
-	if pi != rootEntrySerialIndex && pi != j.lastIndex {
-		return indexToBytes(j.lastIndex), ErrMissingParentIndex
+	pi := entry.GetParentIndex()
+	if pi != rootEntryIndex && pi != j.lastIndex {
+		return j.lastIndex, ErrMissingParentIndex
 	}
 	// TODO(geoah) Check that entry doesn't already exist
 	key := j.getKeyForIndex(entry.GetIndex())
 	errPutting := j.persistence.Put(key, []byte(entry.GetPayload()))
 	if errPutting != nil {
-		return indexToBytes(j.lastIndex), errPutting
+		return j.lastIndex, errPutting
 	}
-	j.lastIndex = indexFromBytes(entry.GetIndex()) // TODO(geoah) Do we need to check for type?
+	j.lastIndex = entry.GetIndex() // TODO(geoah) Do we need to check for type?
 	j.notifyAll(entry)
-	return indexToBytes(j.lastIndex), nil
+	return j.lastIndex, nil
 }
 
 // Append appends a payload as the next Entry to the Journal.

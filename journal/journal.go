@@ -2,12 +2,14 @@ package journal
 
 import "errors"
 
+const rootEntryIndex Index = 0
+
 // ErrMissingParentIndex thrown when trying to append an Entry with its
 // Parent missing.
 var ErrMissingParentIndex = errors.New("Entry's parent index is missing.")
 
 // Index is a unique identifier of each entry.
-type Index []byte
+type Index uint64
 
 // Payload is the value of each entry.
 type Payload []byte
