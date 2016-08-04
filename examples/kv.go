@@ -13,6 +13,30 @@ import (
 	"github.com/nimona/go-nimona/store"
 )
 
+func main() {
+	journalStore := store.NewInMemoryStore()
+	journal := j.NewJournal(journalStore)
+
+	pairsRepositoryStore := store.NewInMemoryStore()
+	pairsRepository := repository.NewRepository(pairsRepositoryStore, &KV{}, &Event{})
+	journal.Notify(pairsRepository)
+
+	api := &kvAPI{
+		journal: journal,
+		pairs:   pairsRepository,
+	}
+
+	iris.Get("/:key", api.Get)
+	iris.Post("/:key", api.Set)
+
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
+	}
+
+	iris.Listen(":" + port)
+}
+
 type Event struct {
 	Guid    []byte      `json:"guid"`
 	Topic   string      `json:"topic"`
@@ -46,10 +70,6 @@ type KV struct {
 
 func (kv *KV) GetGuid() []byte {
 	return kv.Key
-}
-
-func (kv *KV) New() repository.Aggregate {
-	return &KV{}
 }
 
 func (kv *KV) Marshal() ([]byte, error) {
@@ -95,7 +115,7 @@ type kvAPI struct {
 
 func (api *kvAPI) Get(c *iris.Context) {
 	key := c.Param("key")
-	pair, err := api.pairs.GetByGuid([]byte(key))
+	pair, err := api.pairs.GetByGUID([]byte(key))
 	if err != nil {
 		c.Text(iris.StatusNotFound, "Not found")
 		return
@@ -131,7 +151,7 @@ func (api *kvAPI) Set(c *iris.Context) {
 		log.Println("Could not append event. err=", err)
 		return
 	}
-	instance, err := api.pairs.GetByGuid([]byte(key))
+	instance, err := api.pairs.GetByGUID([]byte(key))
 	if err != nil {
 		c.Text(iris.StatusInternalServerError, "Could not get key")
 		return
@@ -146,28 +166,4 @@ func (api *kvAPI) Set(c *iris.Context) {
 	} else {
 		c.Text(iris.StatusNotFound, "Not found")
 	}
-}
-
-func main() {
-	journalStore := store.NewInMemoryStore()
-	journal := j.NewJournal(journalStore)
-
-	pairsRepositoryStore := store.NewInMemoryStore()
-	pairsRepository := repository.NewRepository(pairsRepositoryStore, &KV{}, &Event{})
-	journal.Notify(pairsRepository)
-
-	api := &kvAPI{
-		journal: journal,
-		pairs:   pairsRepository,
-	}
-
-	iris.Get("/:key", api.Get)
-	iris.Post("/:key", api.Set)
-
-	port := os.Getenv("PORT")
-	if port == "" {
-		port = "8080"
-	}
-
-	iris.Listen(":" + port)
 }
