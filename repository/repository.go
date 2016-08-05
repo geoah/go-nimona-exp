@@ -21,7 +21,7 @@ var (
 // eg. A `User` could be the `Aggregate` of `UserCreated`,
 // `UserChangedPassword`, and `UserChangedEmail` events.
 type Aggregate interface {
-	GetGuid() []byte
+	GetGUID() []byte
 	ApplyEvent(Event)
 	Unmarshal([]byte) error
 	Marshal() ([]byte, error)
@@ -30,7 +30,7 @@ type Aggregate interface {
 // Event is anything that has happened.
 // eg. `UserCreated`, `UserChangedPassword`, `UserChangedEmail`
 type Event interface {
-	GetGuid() []byte
+	GetGUID() []byte
 	GetTopic() string
 	Unmarshal([]byte) error
 	Marshal() ([]byte, error)
@@ -97,7 +97,7 @@ func (r *Repository) AppendedEntry(entry journal.Entry) {
 
 	// check if there we already have an aggregate with the same guid
 	exists := false
-	if a, ok := r.pairs[string(event.GetGuid())]; ok {
+	if a, ok := r.pairs[string(event.GetGUID())]; ok {
 		exists = true
 		aggregate = a
 	}
@@ -107,7 +107,7 @@ func (r *Repository) AppendedEntry(entry journal.Entry) {
 
 	// if the aggregate is new let's store
 	if exists == false {
-		r.pairs[string(event.GetGuid())] = aggregate
+		r.pairs[string(event.GetGUID())] = aggregate
 	}
 
 	pretty.Println("r.pairs", r.pairs)

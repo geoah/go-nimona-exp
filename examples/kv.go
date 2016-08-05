@@ -51,7 +51,7 @@ func (e *Event) Unmarshal(payload []byte) error {
 	return json.Unmarshal(payload, e)
 }
 
-func (e *Event) GetGuid() []byte {
+func (e *Event) GetGUID() []byte {
 	return e.Guid
 }
 
@@ -68,7 +68,7 @@ type KV struct {
 	Value *[]byte `json:"v"`
 }
 
-func (kv *KV) GetGuid() []byte {
+func (kv *KV) GetGUID() []byte {
 	return kv.Key
 }
 
@@ -89,7 +89,7 @@ func (kv *KV) ApplyEvent(genericEvent repository.Event) {
 	}
 	json.Unmarshal(eventJSON, event) // TODO(geoah) Check error
 
-	pretty.Println("> Applying", genericEvent, event.GetGuid(), event.GetTopic(), event.Payload)
+	pretty.Println("> Applying", genericEvent, event.GetGUID(), event.GetTopic(), event.Payload)
 
 	switch event.GetTopic() {
 	case "set":
@@ -98,7 +98,7 @@ func (kv *KV) ApplyEvent(genericEvent repository.Event) {
 			log.Fatal(err)
 			return
 		}
-		kv.Key = event.GetGuid()
+		kv.Key = event.GetGUID()
 		kv.Value = payload.Value
 		if kv.Value != nil {
 			fmt.Printf("* SET %s=%s\n", string(kv.Key), string(*kv.Value))
