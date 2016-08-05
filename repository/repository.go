@@ -89,7 +89,7 @@ func (r *Repository) AppendedEntry(entry journal.Entry) {
 	aggregate := aggregatePtr.Interface().(Aggregate)
 
 	// create a new instance of our event from our template
-	eventPtr := reflect.New(reflect.TypeOf(r.aggregate).Elem())
+	eventPtr := reflect.New(reflect.TypeOf(r.event).Elem())
 	event := eventPtr.Interface().(Event)
 
 	// decode the event
