@@ -13,6 +13,30 @@ import (
 	"github.com/nimona/go-nimona/store"
 )
 
+func main() {
+	journalStore := store.NewInMemoryStore()
+	journal := j.NewJournal(journalStore)
+
+	pairsRepositoryStore := store.NewInMemoryStore()
+	pairsRepository := repository.NewRepository(pairsRepositoryStore, &KV{}, &Event{})
+	journal.Notify(pairsRepository)
+
+	api := &kvAPI{
+		journal: journal,
+		pairs:   pairsRepository,
+	}
+
+	iris.Get("/:key", api.Get)
+	iris.Post("/:key", api.Set)
+
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
+	}
+
+	iris.Listen(":" + port)
+}
+
 type Event struct {
 	Guid    []byte      `json:"guid"`
 	Topic   string      `json:"topic"`
@@ -27,7 +51,7 @@ func (e *Event) Unmarshal(payload []byte) error {
 	return json.Unmarshal(payload, e)
 }
 
-func (e *Event) GetGuid() []byte {
+func (e *Event) GetGUID() []byte {
 	return e.Guid
 }
 
@@ -44,12 +68,8 @@ type KV struct {
 	Value *[]byte `json:"v"`
 }
 
-func (kv *KV) GetGuid() []byte {
+func (kv *KV) GetGUID() []byte {
 	return kv.Key
-}
-
-func (kv *KV) New() repository.Aggregate {
-	return &KV{}
 }
 
 func (kv *KV) Marshal() ([]byte, error) {
@@ -69,7 +89,7 @@ func (kv *KV) ApplyEvent(genericEvent repository.Event) {
 	}
 	json.Unmarshal(eventJSON, event) // TODO(geoah) Check error
 
-	pretty.Println("> Applying", genericEvent, event.GetGuid(), event.GetTopic(), event.Payload)
+	pretty.Println("> Applying", genericEvent, event.GetGUID(), event.GetTopic(), event.Payload)
 
 	switch event.GetTopic() {
 	case "set":
@@ -78,7 +98,7 @@ func (kv *KV) ApplyEvent(genericEvent repository.Event) {
 			log.Fatal(err)
 			return
 		}
-		kv.Key = event.GetGuid()
+		kv.Key = event.GetGUID()
 		kv.Value = payload.Value
 		if kv.Value != nil {
 			fmt.Printf("* SET %s=%s\n", string(kv.Key), string(*kv.Value))
@@ -95,7 +115,7 @@ type kvAPI struct {
 
 func (api *kvAPI) Get(c *iris.Context) {
 	key := c.Param("key")
-	pair, err := api.pairs.GetByGuid([]byte(key))
+	pair, err := api.pairs.GetByGUID([]byte(key))
 	if err != nil {
 		c.Text(iris.StatusNotFound, "Not found")
 		return
@@ -131,7 +151,7 @@ func (api *kvAPI) Set(c *iris.Context) {
 		log.Println("Could not append event. err=", err)
 		return
 	}
-	instance, err := api.pairs.GetByGuid([]byte(key))
+	instance, err := api.pairs.GetByGUID([]byte(key))
 	if err != nil {
 		c.Text(iris.StatusInternalServerError, "Could not get key")
 		return
@@ -146,28 +166,4 @@ func (api *kvAPI) Set(c *iris.Context) {
 	} else {
 		c.Text(iris.StatusNotFound, "Not found")
 	}
-}
-
-func main() {
-	journalStore := store.NewInMemoryStore()
-	journal := j.NewJournal(journalStore)
-
-	pairsRepositoryStore := store.NewInMemoryStore()
-	pairsRepository := repository.NewRepository(pairsRepositoryStore, &KV{}, &Event{})
-	journal.Notify(pairsRepository)
-
-	api := &kvAPI{
-		journal: journal,
-		pairs:   pairsRepository,
-	}
-
-	iris.Get("/:key", api.Get)
-	iris.Post("/:key", api.Set)
-
-	port := os.Getenv("PORT")
-	if port == "" {
-		port = "8080"
-	}
-
-	iris.Listen(":" + port)
 }
