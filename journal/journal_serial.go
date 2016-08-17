@@ -6,7 +6,6 @@ import (
 	"sync"
 
 	mc "github.com/jbenet/go-multicodec"
-	"github.com/nimona/go-nimona/store"
 )
 
 // SerialJournal is a Journal with an incremental Index.
@@ -71,16 +70,12 @@ func (j *SerialJournal) Rewind() {
 			break
 		}
 		// TODO(geoah) check type
-		j.replay(false, e)
+		j.processEntry(false, e)
 	}
 }
 
-func (j *SerialJournal) getKeyForIndex(index Index) store.Key {
-	return []byte(fmt.Sprintf("%d", index))
-}
-
-func (j *SerialJournal) replay(store bool, entries ...Entry) (Index, error) {
-	fmt.Println(">> Replaying", entries[0].GetIndex(), string(entries[0].GetPayload()))
+func (j *SerialJournal) processEntry(persist bool, entries ...Entry) (Index, error) {
+	fmt.Println(">> processing", entries[0].GetIndex(), string(entries[0].GetPayload()))
 	entry := entries[0] // TODO(geoah) handle all entries
 	pi := entry.GetIndex() - 1
 	if pi != rootEntryIndex && pi != j.lastIndex {
@@ -88,7 +83,7 @@ func (j *SerialJournal) replay(store bool, entries ...Entry) (Index, error) {
 	}
 	// TODO(geoah) Check that entry doesn't already exist
 
-	if store == true {
+	if persist == true {
 		err := j.encoder.Encode(&entry)
 		if err != nil {
 			fmt.Println("Could not encode entry", err)
@@ -103,7 +98,7 @@ func (j *SerialJournal) replay(store bool, entries ...Entry) (Index, error) {
 
 // Restore appends an Entry to the Journal with an existing index.
 func (j *SerialJournal) Restore(entries ...Entry) (Index, error) {
-	return j.replay(true, entries...)
+	return j.processEntry(true, entries...)
 }
 
 // Append appends a payload as the next Entry to the Journal.
@@ -112,7 +107,7 @@ func (j *SerialJournal) Append(payloads ...[]byte) (Index, error) {
 	j.Lock()
 	defer j.Unlock()
 	entry := NewSerialEntry(j.lastIndex+1, payload)
-	return j.Restore(entry)
+	return j.processEntry(true, entry)
 }
 
 // Notify adds notifiees for AppendEntry events.
