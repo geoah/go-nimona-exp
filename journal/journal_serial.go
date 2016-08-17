@@ -60,19 +60,18 @@ func NewJournal(c mc.Codec, r io.Reader, w io.Writer) *SerialJournal {
 }
 
 // Replay goes through all the persisted events and processes them.
-func (j *SerialJournal) Replay() {
+func (j *SerialJournal) Replay() error {
 	for {
 		e := &SerialEntry{}
 		err := j.decoder.Decode(e)
 		if err == io.EOF {
 			break
 		} else if err != nil {
-			fmt.Println(err)
-			break
+			return err
 		}
-		// TODO(geoah) check type
 		j.processEntry(false, e)
 	}
+	return nil
 }
 
 func (j *SerialJournal) processEntry(persist bool, entries ...Entry) (Index, error) {
