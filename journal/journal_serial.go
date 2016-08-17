@@ -59,7 +59,8 @@ func NewJournal(c mc.Codec, r io.Reader, w io.Writer) *SerialJournal {
 	}
 }
 
-func (j *SerialJournal) Rewind() {
+// Replay goes through all the persisted events and processes them.
+func (j *SerialJournal) Replay() {
 	for {
 		e := &SerialEntry{}
 		err := j.decoder.Decode(e)

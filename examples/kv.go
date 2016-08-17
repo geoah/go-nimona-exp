@@ -28,7 +28,7 @@ func main() {
 	pairsRepository := repository.NewRepository(pairsRepositoryStore, &KV{}, &Event{})
 	journal.Notify(pairsRepository)
 
-	journal.Rewind()
+	journal.Replay()
 
 	api := &kvAPI{
 		journal: journal,
