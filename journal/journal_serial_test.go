@@ -2,8 +2,10 @@ package journal
 
 import (
 	"encoding/json"
+	"os"
 	"testing"
 
+	mj "github.com/jbenet/go-multicodec/json"
 	"github.com/nimona/go-nimona/store"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/suite"
@@ -18,6 +20,8 @@ type JournalTestSuite struct {
 	userID      string
 	persistence store.Store
 	journal     *SerialJournal
+	file        *os.File
+	filePath    string
 }
 
 func TestJournalTestSuite(t *testing.T) {
@@ -26,8 +30,21 @@ func TestJournalTestSuite(t *testing.T) {
 
 func (s *JournalTestSuite) SetupTest() {
 	s.userID = "user_id"
-	s.persistence = store.NewInMemoryStore()
-	s.journal = NewJournal(s.persistence)
+
+	s.filePath = "/tmp/nimona-journal-test.mjson"
+	f, err := os.OpenFile(s.filePath, os.O_RDWR|os.O_APPEND|os.O_CREATE, 0777)
+	if err != nil {
+		panic(err)
+	}
+
+	s.file = f
+	mc := mj.Codec(true)
+	s.journal = NewJournal(mc, s.file, s.file)
+}
+
+func (s *JournalTestSuite) TeardownTest() {
+	s.file.Close()
+	os.Remove(s.filePath)
 }
 
 func (s *JournalTestSuite) TestPersistedRestore_Valid_Succeeds() {

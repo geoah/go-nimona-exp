@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 
+	mj "github.com/jbenet/go-multicodec/json"
 	"github.com/kataras/iris"
 	"github.com/kr/pretty"
 	j "github.com/nimona/go-nimona/journal"
@@ -14,8 +15,14 @@ import (
 )
 
 func main() {
-	journalStore := store.NewInMemoryStore()
-	journal := j.NewJournal(journalStore)
+	f, err := os.OpenFile("/tmp/nimona-journal-kv.mjson", os.O_RDWR|os.O_APPEND|os.O_CREATE, 0777)
+	if err != nil {
+		panic(err)
+	}
+	defer f.Close()
+
+	mc := mj.Codec(true)
+	journal := j.NewJournal(mc, f, f)
 
 	pairsRepositoryStore := store.NewInMemoryStore()
 	pairsRepository := repository.NewRepository(pairsRepositoryStore, &KV{}, &Event{})

@@ -1,33 +1,29 @@
 package journal
 
 import (
-	"encoding/gob"
 	"fmt"
 	"io"
-	"os"
 	"sync"
 
+	mc "github.com/jbenet/go-multicodec"
 	"github.com/nimona/go-nimona/store"
 )
-
-func init() {
-	gob.Register(&SerialEntry{})
-}
 
 // SerialJournal is a Journal with an incremental Index.
 type SerialJournal struct {
 	sync.Mutex
-	persistence store.Store
-	notifiees   []Notifiee // TODO(geoah) convert to a map so we can de-register them.
-	lastIndex   Index
-	file        *os.File
-	encoder     *gob.Encoder
+	codec     mc.Codec
+	notifiees []Notifiee // TODO(geoah) convert to a map so we can de-register them.
+	lastIndex Index
+	// file      *os.File
+	encoder mc.Encoder
+	decoder mc.Decoder
 }
 
 // SerialEntry is an Entry in our Journal with a Index.
 type SerialEntry struct {
-	Index   Index
-	Payload []byte
+	Index   Index  `json:"i"`
+	Payload []byte `json:"p"`
 }
 
 // NewSerialEntry creates a new SerialEntry out of an index and payload.
@@ -54,30 +50,20 @@ func (e *SerialEntry) GetPayload() Payload {
 }
 
 // NewJournal creates a new Journal.
-func NewJournal(persistence store.Store) *SerialJournal {
-	// f, _ := os.Create("/tmp/dat2")
-	f, err := os.OpenFile("/tmp/dat2", os.O_APPEND|os.O_CREATE|os.O_RDWR, 0777)
-	if err != nil {
-		panic(err)
+func NewJournal(c mc.Codec, r io.Reader, w io.Writer) *SerialJournal {
+	dec := c.Decoder(r)
+	enc := c.Encoder(w)
+	return &SerialJournal{
+		lastIndex: rootEntryIndex,
+		encoder:   enc,
+		decoder:   dec,
 	}
-
-	enc := gob.NewEncoder(f)
-	// defer f.Close()
-	j := &SerialJournal{
-		persistence: persistence,
-		lastIndex:   rootEntryIndex,
-		file:        f,
-		encoder:     enc,
-	}
-
-	return j
 }
 
 func (j *SerialJournal) Rewind() {
-	dec := gob.NewDecoder(j.file)
 	for {
-		var e Entry
-		err := dec.Decode(&e)
+		e := &SerialEntry{}
+		err := j.decoder.Decode(e)
 		if err == io.EOF {
 			break
 		} else if err != nil {
@@ -85,7 +71,7 @@ func (j *SerialJournal) Rewind() {
 			break
 		}
 		// TODO(geoah) check type
-		j.replay(false, e.(Entry))
+		j.replay(false, e)
 	}
 }
 
@@ -105,12 +91,8 @@ func (j *SerialJournal) replay(store bool, entries ...Entry) (Index, error) {
 	if store == true {
 		err := j.encoder.Encode(&entry)
 		if err != nil {
-			fmt.Println("Could not encode gob", err)
+			fmt.Println("Could not encode entry", err)
 			return j.lastIndex, err
-		}
-		err = j.file.Sync()
-		if err != nil {
-			fmt.Println("Could not flush file", err)
 		}
 	}
 
