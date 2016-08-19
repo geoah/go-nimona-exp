@@ -116,7 +116,7 @@ func (j *SequentialJournal) processEntry(persist bool, entries ...Entry) (lin In
 		j.lastIndex = entry.GetIndex() // TODO(geoah) Do we need to check for type?
 		j.notifyAll(entry)
 	}
-	return lin, nil
+	return j.lastIndex, nil
 }
 
 // Notify adds notifiees for AppendEntry events.
