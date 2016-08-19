@@ -17,7 +17,7 @@ type testPayload struct {
 type JournalTestSuite struct {
 	suite.Suite
 	userID   string
-	journal  *SerialJournal
+	journal  *SequentialJournal
 	file     *os.File
 	filePath string
 }
@@ -84,9 +84,9 @@ func (s *JournalTestSuite) TestFilePersistence_Valid_Succeeds() {
 	nm := &MockNotifiee{}
 	journal.Notify(nm)
 
-	nm.On("AppendedEntry", NewSerialEntry(entry1index, entry1payloadJSON)).Return()
-	nm.On("AppendedEntry", NewSerialEntry(entry2index, entry2payloadJSON)).Return()
-	nm.On("AppendedEntry", NewSerialEntry(entry3index, entry3payloadJSON)).Return()
+	nm.On("AppendedEntry", NewSequentialEntry(entry1index, entry1payloadJSON)).Return()
+	nm.On("AppendedEntry", NewSequentialEntry(entry2index, entry2payloadJSON)).Return()
+	nm.On("AppendedEntry", NewSequentialEntry(entry3index, entry3payloadJSON)).Return()
 
 	err = journal.Replay()
 	assert.Nil(s.T(), err)
@@ -96,17 +96,17 @@ func (s *JournalTestSuite) TestPersistedRestore_Valid_Succeeds() {
 	entry1payload := &testPayload{String: "entry1"}
 	entry1payloadJSON, _ := json.Marshal(entry1payload)
 	entry1index := Index(1)
-	entry1 := NewSerialEntry(entry1index, entry1payloadJSON)
+	entry1 := NewSequentialEntry(entry1index, entry1payloadJSON)
 
 	entry2payload := &testPayload{String: "entry2"}
 	entry2payloadJSON, _ := json.Marshal(entry2payload)
 	entry2index := Index(2)
-	entry2 := NewSerialEntry(entry2index, entry2payloadJSON)
+	entry2 := NewSequentialEntry(entry2index, entry2payloadJSON)
 
 	entry3payload := &testPayload{String: "entry3"}
 	entry3payloadJSON, _ := json.Marshal(entry3payload)
 	entry3index := Index(3)
-	entry3 := NewSerialEntry(entry3index, entry3payloadJSON)
+	entry3 := NewSequentialEntry(entry3index, entry3payloadJSON)
 
 	index1, errEntry1 := s.journal.Restore(entry1)
 	assert.Equal(s.T(), entry1index, index1)
@@ -150,7 +150,7 @@ func (s *JournalTestSuite) TestPersistedAppend_Valid_Succeeds() {
 func (s *JournalTestSuite) TestAppend_InvalidParent_Failes() {
 	entry2payload := &testPayload{String: "entry2"}
 	entry2payloadJSON, _ := json.Marshal(entry2payload)
-	entry2 := NewSerialEntry(2, entry2payloadJSON)
+	entry2 := NewSequentialEntry(2, entry2payloadJSON)
 
 	lastIndex, errEntry2 := s.journal.Restore(entry2)
 	assert.Equal(s.T(), Index(0), lastIndex)

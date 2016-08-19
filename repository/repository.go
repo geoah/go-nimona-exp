@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"reflect"
 
-	"github.com/kr/pretty"
 	"github.com/nimona/go-nimona/journal"
 	"github.com/nimona/go-nimona/store"
 )
@@ -80,7 +79,7 @@ func (r *Repository) GetByGUID(key []byte) (Aggregate, error) {
 // AppendedEntry satisfies the `journal.Notifiee` interface and is called when
 // a new entry has been added to the `Journal`.
 func (r *Repository) AppendedEntry(entry journal.Entry) {
-	fmt.Println("> Processing", string(entry.GetIndex()), string(entry.GetPayload()))
+	fmt.Printf("> Processing entry for event. index=%#v; payload=%#v;\n", string(entry.GetIndex()), string(entry.GetPayload()))
 	// TODO(geoah) Check that this event hasn't already been processed.
 	// TODO(geoah) Check that the previous event has already been processed.
 
@@ -109,6 +108,4 @@ func (r *Repository) AppendedEntry(entry journal.Entry) {
 	if exists == false {
 		r.pairs[string(event.GetGUID())] = aggregate
 	}
-
-	pretty.Println("r.pairs", r.pairs)
 }
