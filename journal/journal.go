@@ -2,14 +2,12 @@ package journal
 
 import "errors"
 
-const rootEntryIndex Index = 0
-
 // ErrMissingParentIndex thrown when trying to append an Entry with its
 // Parent missing.
 var ErrMissingParentIndex = errors.New("Entry's parent index is missing.")
 
 // Index is a unique identifier of each entry.
-type Index uint64
+type Index interface{}
 
 // Payload is the value of each entry.
 type Payload []byte
@@ -18,6 +16,10 @@ type Payload []byte
 type Entry interface {
 	// GetIndex returns the Entry's Index.
 	GetIndex() Index
+	// GetParentIndex returns the Entry's previous/parent Index.
+	// This is mainly useful when Entries do not have a sequential
+	// Index. eg. In case of a DAG based Journal.
+	GetParentIndex() Index
 	// GetPayload returns the Payload for the Entry
 	GetPayload() Payload
 }
@@ -25,9 +27,9 @@ type Entry interface {
 // Notifiee is an interface for an object wishing to receive notifications
 // of appended Entries in a Journal.
 type Notifiee interface {
-	// AppendedEntry will be called when an entry has been appended
+	// ProcessJournalEntry will be called when an entry has been appended
 	// and persisted in the journal.
-	AppendedEntry(Entry)
+	ProcessJournalEntry(Entry)
 }
 
 // Journal is a series of entries.
