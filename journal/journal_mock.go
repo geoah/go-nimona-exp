@@ -94,7 +94,7 @@ type MockNotifiee struct {
 	mock.Mock
 }
 
-// AppendedEntry provides a mock function with given fields: _a0
-func (_m *MockNotifiee) AppendedEntry(_a0 Entry) {
+// ProcessJournalEntry provides a mock function with given fields: _a0
+func (_m *MockNotifiee) ProcessJournalEntry(_a0 Entry) {
 	_m.Called(_a0)
 }

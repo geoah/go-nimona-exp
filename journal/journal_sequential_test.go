@@ -84,9 +84,9 @@ func (s *JournalTestSuite) TestFilePersistence_Valid_Succeeds() {
 	nm := &MockNotifiee{}
 	journal.Notify(nm)
 
-	nm.On("AppendedEntry", NewSequentialEntry(entry1index, entry1payloadJSON)).Return()
-	nm.On("AppendedEntry", NewSequentialEntry(entry2index, entry2payloadJSON)).Return()
-	nm.On("AppendedEntry", NewSequentialEntry(entry3index, entry3payloadJSON)).Return()
+	nm.On("ProcessJournalEntry", NewSequentialEntry(entry1index, entry1payloadJSON)).Return()
+	nm.On("ProcessJournalEntry", NewSequentialEntry(entry2index, entry2payloadJSON)).Return()
+	nm.On("ProcessJournalEntry", NewSequentialEntry(entry3index, entry3payloadJSON)).Return()
 
 	err = journal.Replay()
 	assert.Nil(s.T(), err)

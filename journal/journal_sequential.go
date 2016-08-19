@@ -130,6 +130,6 @@ func (j *SequentialJournal) notifyAll(entry Entry) {
 	fmt.Println("\t> Notifying notifiees.", entry)
 	for i, notifiee := range j.notifiees {
 		fmt.Printf("\t\t Notified notifiee #%d.\n", i)
-		notifiee.AppendedEntry(entry)
+		notifiee.ProcessJournalEntry(entry)
 	}
 }

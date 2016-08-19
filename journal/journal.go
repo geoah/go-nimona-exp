@@ -25,9 +25,9 @@ type Entry interface {
 // Notifiee is an interface for an object wishing to receive notifications
 // of appended Entries in a Journal.
 type Notifiee interface {
-	// AppendedEntry will be called when an entry has been appended
+	// ProcessJournalEntry will be called when an entry has been appended
 	// and persisted in the journal.
-	AppendedEntry(Entry)
+	ProcessJournalEntry(Entry)
 }
 
 // Journal is a series of entries.
