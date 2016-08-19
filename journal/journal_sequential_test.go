@@ -48,15 +48,15 @@ func (s *JournalTestSuite) TeardownTest() {
 func (s *JournalTestSuite) TestFilePersistence_Valid_Succeeds() {
 	entry1payload := &testPayload{String: "entry1"}
 	entry1payloadJSON, _ := json.Marshal(entry1payload)
-	entry1index := Index(1)
+	entry1index := SequentialIndex(1)
 
 	entry2payload := &testPayload{String: "entry2"}
 	entry2payloadJSON, _ := json.Marshal(entry2payload)
-	entry2index := Index(2)
+	entry2index := SequentialIndex(2)
 
 	entry3payload := &testPayload{String: "entry3"}
 	entry3payloadJSON, _ := json.Marshal(entry3payload)
-	entry3index := Index(3)
+	entry3index := SequentialIndex(3)
 
 	index1, errEntry1 := s.journal.Append(entry1payloadJSON)
 	assert.Equal(s.T(), entry1index, index1)
@@ -95,17 +95,17 @@ func (s *JournalTestSuite) TestFilePersistence_Valid_Succeeds() {
 func (s *JournalTestSuite) TestPersistedRestore_Valid_Succeeds() {
 	entry1payload := &testPayload{String: "entry1"}
 	entry1payloadJSON, _ := json.Marshal(entry1payload)
-	entry1index := Index(1)
+	entry1index := SequentialIndex(1)
 	entry1 := NewSequentialEntry(entry1index, entry1payloadJSON)
 
 	entry2payload := &testPayload{String: "entry2"}
 	entry2payloadJSON, _ := json.Marshal(entry2payload)
-	entry2index := Index(2)
+	entry2index := SequentialIndex(2)
 	entry2 := NewSequentialEntry(entry2index, entry2payloadJSON)
 
 	entry3payload := &testPayload{String: "entry3"}
 	entry3payloadJSON, _ := json.Marshal(entry3payload)
-	entry3index := Index(3)
+	entry3index := SequentialIndex(3)
 	entry3 := NewSequentialEntry(entry3index, entry3payloadJSON)
 
 	index1, errEntry1 := s.journal.Restore(entry1)
@@ -124,15 +124,15 @@ func (s *JournalTestSuite) TestPersistedRestore_Valid_Succeeds() {
 func (s *JournalTestSuite) TestPersistedAppend_Valid_Succeeds() {
 	entry1payload := &testPayload{String: "entry1"}
 	entry1payloadJSON, _ := json.Marshal(entry1payload)
-	entry1index := Index(1)
+	entry1index := SequentialIndex(1)
 
 	entry2payload := &testPayload{String: "entry2"}
 	entry2payloadJSON, _ := json.Marshal(entry2payload)
-	entry2index := Index(2)
+	entry2index := SequentialIndex(2)
 
 	entry3payload := &testPayload{String: "entry3"}
 	entry3payloadJSON, _ := json.Marshal(entry3payload)
-	entry3index := Index(3)
+	entry3index := SequentialIndex(3)
 
 	index1, errEntry1 := s.journal.Append(entry1payloadJSON)
 	assert.Equal(s.T(), entry1index, index1)
@@ -153,6 +153,6 @@ func (s *JournalTestSuite) TestAppend_InvalidParent_Failes() {
 	entry2 := NewSequentialEntry(2, entry2payloadJSON)
 
 	lastIndex, errEntry2 := s.journal.Restore(entry2)
-	assert.Equal(s.T(), Index(0), lastIndex)
+	assert.Equal(s.T(), SequentialIndex(0), lastIndex)
 	assert.Equal(s.T(), ErrMissingParentIndex, errEntry2)
 }

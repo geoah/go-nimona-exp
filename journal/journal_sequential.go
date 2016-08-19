@@ -8,6 +8,12 @@ import (
 	mc "github.com/jbenet/go-multicodec"
 )
 
+// SequentialIndex is a very simple incremental Index
+type SequentialIndex uint64
+
+// SequentialJournalRootIndex is our first Index
+const SequentialJournalRootIndex SequentialIndex = 0
+
 // SequentialJournal is a Journal with an incremental Index.
 type SequentialJournal struct {
 	sync.Mutex
@@ -20,12 +26,12 @@ type SequentialJournal struct {
 
 // SequentialEntry is an Entry in our Journal with a sequential uint64 Index.
 type SequentialEntry struct {
-	Index   Index  `json:"i"`
-	Payload []byte `json:"p"`
+	Index   SequentialIndex `json:"i"`
+	Payload []byte          `json:"p"`
 }
 
 // NewSequentialEntry creates a new SequentialEntry out of an index and payload.
-func NewSequentialEntry(index Index, payload []byte) *SequentialEntry {
+func NewSequentialEntry(index SequentialIndex, payload []byte) *SequentialEntry {
 	return &SequentialEntry{
 		Index:   index,
 		Payload: payload,
@@ -39,7 +45,7 @@ func (e *SequentialEntry) GetIndex() Index {
 
 // GetParentIndex returns the parent Entry's Index.
 func (e *SequentialEntry) GetParentIndex() Index {
-	return e.Index - 1
+	return e.GetIndex().(SequentialIndex) - 1
 }
 
 // GetPayload returns the Payload for the Entry.
@@ -52,7 +58,7 @@ func NewJournal(c mc.Codec, r io.Reader, w io.Writer) *SequentialJournal {
 	dec := c.Decoder(r)
 	enc := c.Encoder(w)
 	return &SequentialJournal{
-		lastIndex: rootEntryIndex,
+		lastIndex: SequentialJournalRootIndex,
 		encoder:   enc,
 		decoder:   dec,
 	}
@@ -83,7 +89,7 @@ func (j *SequentialJournal) Append(payloads ...[]byte) (lin Index, err error) {
 	for _, payload := range payloads {
 		j.Lock()
 		defer j.Unlock()
-		entry := NewSequentialEntry(j.lastIndex+1, payload)
+		entry := NewSequentialEntry(j.lastIndex.(SequentialIndex)+1, payload)
 		if lin, err = j.processEntry(true, entry); err != nil {
 			return lin, err
 		}
@@ -97,8 +103,10 @@ func (j *SequentialJournal) processEntry(persist bool, entries ...Entry) (lin In
 		fmt.Printf("> Processing entry=%#v;\n", entry)
 		// check if we have already processed the previous entry
 		// or that this is the first entry of our log (index=0).
-		pi := entry.GetIndex() - 1
-		if pi != rootEntryIndex && pi != j.lastIndex {
+		fmt.Printf(">>>>>>> DDDD\n")
+		pi := entry.GetParentIndex().(SequentialIndex)
+		fmt.Printf(">>>>>>> %+v\n\n", pi)
+		if pi != SequentialJournalRootIndex && pi != j.lastIndex.(SequentialIndex) {
 			fmt.Printf("Missing parent index. lastIndex=%d;\n", j.lastIndex)
 			return j.lastIndex, ErrMissingParentIndex
 		}

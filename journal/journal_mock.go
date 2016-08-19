@@ -73,6 +73,20 @@ func (_m *MockEntry) GetIndex() Index {
 	return r0
 }
 
+// GetParentIndex provides a mock function with given fields:
+func (_m *MockEntry) GetParentIndex() Index {
+	ret := _m.Called()
+
+	var r0 Index
+	if rf, ok := ret.Get(0).(func() Index); ok {
+		r0 = rf()
+	} else {
+		r0 = ret.Get(0).(Index)
+	}
+
+	return r0
+}
+
 // GetPayload provides a mock function with given fields:
 func (_m *MockEntry) GetPayload() Payload {
 	ret := _m.Called()
