@@ -30,7 +30,7 @@ func main() {
 	// The repository will go through the events, and for each new `Event.GetGUID()` it gets will
 	// create a new Aggregate and `aggregate.Apply(event)` on its events.
 	pairsRepository := repository.NewRepository(pairsRepositoryStore, &Pair{}, &Event{})
-	// ask to recieve notifications of new entries being added in the journal
+	// ask to receive notifications of new entries being added in the journal
 	journal.Notify(pairsRepository)
 
 	// we can now replay all entries in the journal to re-construct the state of our key-value store
